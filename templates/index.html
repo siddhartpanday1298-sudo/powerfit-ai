@@ -12,7 +12,6 @@
             overflow-x: hidden;
         }
 
-        /* Animated Background */
         body::before {
             content: "";
             position: fixed;
@@ -34,7 +33,6 @@
             }
         }
 
-        /* Navbar */
         .navbar {
             text-align: center;
             padding: 20px;
@@ -46,16 +44,6 @@
             color: #00ffcc;
         }
 
-        /* Session Timer */
-        #session-timer {
-            position: fixed;
-            top: 10px;
-            right: 20px;
-            color: #00ffcc;
-            font-size: 14px;
-        }
-
-        /* Hero */
         .hero {
             text-align: center;
             padding: 60px 20px;
@@ -66,7 +54,6 @@
             color: #00ffcc;
         }
 
-        /* Chat Container */
         #chat-container {
             position: fixed;
             bottom: 20px;
@@ -133,10 +120,6 @@
         <h2>PowerFit AI Gym</h2>
     </div>
 
-    <div id="session-timer">
-        Session expires in: <span id="countdown">05:00</span>
-    </div>
-
     <div class="hero">
         <h1>Futuristic AI Fitness Experience</h1>
         <p>24/7 Intelligent Gym Support</p>
@@ -153,14 +136,13 @@
     </footer>
 
     <script>
-        // ENTER KEY SUPPORT
+
         function handleKey(event) {
             if (event.key === "Enter") {
                 sendMessage();
             }
         }
 
-        // SEND MESSAGE
         function sendMessage() {
             let message = document.getElementById("userInput").value;
             if (!message) return;
@@ -168,42 +150,40 @@
             let chatbox = document.getElementById("chatbox");
 
             chatbox.innerHTML += `<div class="user-msg">You: ${message}</div>`;
-            chatbox.innerHTML += `<div class="bot-msg" id="typing">AI is typing...</div>`;
+
+            let typingDiv = document.createElement("div");
+            typingDiv.className = "bot-msg";
+            typingDiv.innerText = "AI is typing...";
+            chatbox.appendChild(typingDiv);
+
             chatbox.scrollTop = chatbox.scrollHeight;
 
             fetch("/chat", {
                 method: "POST",
+                credentials: "same-origin",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: message })
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Session expired");
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    document.getElementById("typing").innerHTML = "AI: " + data.response;
+                    typingDiv.innerText = "AI: " + data.response;
                     chatbox.scrollTop = chatbox.scrollHeight;
+                })
+                .catch(error => {
+                    typingDiv.innerText = "Session expired. Redirecting...";
+                    setTimeout(() => {
+                        window.location.href = "/login";
+                    }, 1500);
                 });
 
             document.getElementById("userInput").value = "";
         }
 
-        // SESSION COUNTDOWN (5 minutes = 300 seconds)
-        let timeLeft = 300;
-
-        function updateTimer() {
-            let minutes = Math.floor(timeLeft / 60);
-            let seconds = timeLeft % 60;
-
-            document.getElementById("countdown").innerText =
-                String(minutes).padStart(2, '0') + ":" +
-                String(seconds).padStart(2, '0');
-
-            if (timeLeft <= 0) {
-                window.location.href = "/logout";
-            }
-
-            timeLeft--;
-        }
-
-        setInterval(updateTimer, 1000);
     </script>
 
 </body>
